@@ -1,0 +1,164 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  @keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out;
+}
+
+body {
+    @apply bg-volusia-sand text-volusia-navy font-sans antialiased;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-white rounded-lg shadow-md p-6 border border-gray-100;
+  }
+  .card-hover {
+    @apply card hover:shadow-lg transition-shadow duration-200;
+  }
+  .btn-primary {
+    @apply bg-volusia-teal text-white px-5 py-2.5 rounded-md font-medium hover:bg-volusia-blue transition-colors duration-150;
+  }
+  .btn-secondary {
+    @apply bg-white text-volusia-teal border border-volusia-teal px-5 py-2.5 rounded-md font-medium hover:bg-volusia-teal hover:text-white transition-colors duration-150;
+  }
+  .section-title {
+    @apply text-2xl font-bold text-volusia-navy mb-2;
+  }
+  .section-subtitle {
+    @apply text-volusia-slate mb-6;
+  }
+  .stat-card {
+    @apply bg-white rounded-lg p-4 border border-gray-100 text-center;
+  }
+  .stat-value {
+    @apply text-3xl font-bold text-volusia-teal;
+  }
+  .stat-label {
+    @apply text-sm text-volusia-slate mt-1;
+  }
+  .sr-only {
+    @apply absolute w-px h-px p-0 -m-px overflow-hidden whitespace-nowrap border-0;
+  }
+  .sr-only:focus {
+    @apply relative w-auto h-auto p-2 bg-volusia-teal text-white rounded z-[100];
+  }
+  .nav-link {
+    @apply text-volusia-slate hover:text-volusia-teal transition-colors duration-150 px-3 py-2 rounded;
+  }
+  .nav-link-active {
+    @apply text-volusia-teal font-medium bg-volusia-teal/10;
+  }
+  .nav-link-accent-home { border-bottom: 2px solid #0d9488; }
+  .nav-link-accent-data { border-bottom: 2px solid #3b82f6; }
+  .nav-link-accent-maps { border-bottom: 2px solid #8b5cf6; }
+  .nav-link-accent-business { border-bottom: 2px solid #f59e0b; }
+  .nav-link-accent-residents { border-bottom: 2px solid #10b981; }
+  .nav-link-accent-tourists { border-bottom: 2px solid #ec4899; }
+  .nav-link-accent-leaders { border-bottom: 2px solid #6366f1; }
+  .nav-link-accent-gamification { border-bottom: 2px solid #f43f5e; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Dark mode styles */
+body {
+  @apply bg-dark-900 text-dark-100;
+}
+
+.dark .card {
+  @apply bg-dark-800 border-dark-700 text-dark-100;
+}
+
+.dark .stat-card {
+  @apply bg-dark-800 border-dark-700;
+}
+
+.dark .stat-value {
+  @apply text-volusia-teal;
+}
+
+.dark .section-title {
+  @apply text-dark-100;
+}
+
+.dark .section-subtitle {
+  @apply text-dark-400;
+}
+
+.dark .btn-primary {
+  @apply bg-volusia-teal hover:bg-volusia-blue text-white;
+}
+
+.dark .btn-secondary {
+  @apply bg-dark-700 text-dark-300 border-dark-600 hover:bg-dark-600;
+}
+
+.dark .nav-link {
+  @apply text-dark-400 hover:text-volusia-teal;
+}
+
+.dark .nav-link-active {
+  @apply text-volusia-teal bg-volusia-teal/10;
+}
+
+.dark .bg-volusia-navy {
+  @apply bg-dark-900;
+}
+
+.dark .bg-white {
+  @apply bg-dark-800;
+}
+
+.dark .bg-gray-50 {
+  @apply bg-dark-800;
+}
+
+.dark .text-gray-500 {
+  @apply text-dark-400;
+}
+
+.dark .text-volusia-slate {
+  @apply text-dark-400;
+}
+
+.dark .border-gray-100 {
+  @apply border-dark-700;
+}
+
+.dark .bg-gray-200 {
+  @apply bg-dark-700;
+}
+
+/* Smooth theme transition */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out;
+}
+
+body {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.card, .stat-card, .btn-primary, .btn-secondary, .nav-link {
+  transition: all 0.2s ease;
+}

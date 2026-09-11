@@ -1,0 +1,184 @@
+import { useState, useEffect } from 'react'
+import { Link, useLocation } from 'react-router-dom'
+import { Card, SectionTitle, Badge } from '../components/UI'
+import { useGamificationStats, useDiagnostics, useGamification } from '../hooks/useApi'
+
+const navLinks = [
+  { to: '/', label: 'Home' },
+  { to: '/data', label: 'Data' },
+  { to: '/gamification', label: '🏆 Gamify' },
+  { to: '/projects', label: 'Projects' },
+  { to: '/leaders', label: 'Leaders' },
+]
+
+export function Header() {
+  const location = useLocation()
+  const { stats, totalUsers, avgXp, avgLevel } = useGamificationStats('anonymous')
+  const { diagnostics, loading: diagLoading } = useDiagnostics()
+  const { visitPage } = useGamification('anonymous')
+  const [mobileOpen, setMobileOpen] = useState(false)
+
+  // Track page visits for gamification
+  useEffect(() => {
+    visitPage()
+  }, [location.pathname])
+  const [isDark, setIsDark] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('volusia-theme')
+      if (stored) return stored === 'dark'
+      return window.matchMedia('(prefers-color-scheme: dark)').matches
+    }
+    return false
+  })
+
+  const pageTitles: Record<string, string> = {
+      '/': 'Home',
+      '/data': 'Data Explorer',
+      '/maps': 'Interactive Maps',
+      '/business': 'Business Tools',
+      '/residents': 'Resident Data',
+      '/tourists': 'Tourist Information',
+      '/leaders': 'Investor Data Room',
+      '/gamification': '🏆 Gamification Hub',
+      '/projects': 'Our Projects',
+    }
+
+  const currentPageTitle = pageTitles[location.pathname] || 'Project Volusia'
+
+  return (
+    <>
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 bg-volusia-teal text-white px-4 py-2 rounded z-[100]">Skip to content</a>
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <Link to="/" className="flex items-center space-x-3 no-underline">
+              <div className="w-10 h-10 rounded-lg bg-volusia-teal flex items-center justify-center text-volusia-gold font-bold text-xl">
+                V
+              </div>
+              <div className="flex flex-col">
+                <span className="text-volusia-navy font-bold text-lg leading-tight">Project Volusia</span>
+                <span className="text-xs text-volusia-slate">Volusia County Data Portal</span>
+              </div>
+            </Link>
+
+            {currentPageTitle && location.pathname !== '/' && (
+              <div className="hidden md:block ml-4">
+                <span className="text-sm font-medium text-volusia-slate">{currentPageTitle}</span>
+              </div>
+            )}
+
+                        <div className="hidden lg:flex items-center space-x-4 text-xs text-volusia-slate">
+              {totalUsers > 0 && (
+                <span>Community: {totalUsers} users · Avg Level {Math.round(avgLevel)} · Avg XP {Math.round(avgXp)}</span>
+              )}
+            </div>
+            <nav className="hidden lg:flex items-center space-x-1">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.to}
+                  to={link.to}
+                  className={`nav-link text-sm ${location.pathname === link.to ? 'nav-link-active' : ''}`}
+                  tabIndex={0}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); window.location.href = link.to; } }}
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </nav>
+
+            <button
+              onClick={() => {
+                const next = !isDark
+                setIsDark(next)
+                localStorage.setItem('volusia-theme', next ? 'dark' : 'light')
+                document.documentElement.classList.toggle('dark', next)
+              }}
+              className="p-2 rounded-md text-volusia-slate hover:text-volusia-teal transition-colors"
+              aria-label="Toggle dark mode"
+              title="Toggle dark mode"
+            >
+              {isDark ? (
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+              ) : (
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                </svg>
+              )}
+            </button>
+            <button
+              onClick={() => setMobileOpen(!mobileOpen)}
+              className="lg:hidden p-2 rounded-md text-volusia-slate hover:text-volusia-teal"
+              aria-label="Toggle menu"
+            >
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                {mobileOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
+          </div>
+
+          <div className="lg:hidden pb-2"></div>
+          {mobileOpen && (
+            <div className="lg:hidden pb-4 border-t border-gray-100 animate-fadeIn">
+              <div className="flex flex-col space-y-1 pt-2">
+                {navLinks.map((link) => (
+                  <Link
+                    key={link.to}
+                    to={link.to}
+                    onClick={() => setMobileOpen(false)}
+                    className={`nav-link text-sm block py-2 px-3 rounded ${location.pathname === link.to ? 'nav-link-active' : ''}`}
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </header>
+    </>
+  )
+}
+
+export function Footer() {
+  return (
+    <footer className="bg-volusia-navy text-white py-12 mt-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+          <div className="col-span-1 md:col-span-2">
+            <h3 className="text-xl font-bold mb-2 text-volusia-gold">Project Volusia</h3>
+            <p className="text-gray-300 text-sm leading-relaxed max-w-md">
+              Open-source intelligence and data-driven decision-making for Volusia County, Florida.
+              Built by ZQM Labs. Serving business owners, residents, tourists, and industry movers.
+            </p>
+          </div>
+          <div>
+            <h4 className="font-semibold mb-3 text-gray-200">Platform</h4>
+            <ul className="space-y-2 text-sm text-gray-400">
+              <li><Link to="/data" className="hover:text-white no-underline text-gray-300">Data Explorer</Link></li>
+              <li><Link to="/maps" className="hover:text-white no-underline text-gray-300">Interactive Maps</Link></li>
+              <li><Link to="/business" className="hover:text-white no-underline text-gray-300">Business Tools</Link></li>
+              <li><Link to="/residents" className="hover:text-white no-underline text-gray-300">Resident Data</Link></li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="font-semibold mb-3 text-gray-200">ZQM Ecosystem</h4>
+            <ul className="space-y-2 text-sm text-gray-400">
+              <li><a href="https://github.com/ZQM-Computing" target="_blank" rel="noopener noreferrer" className="hover:text-white no-underline text-gray-300">ZQM Computing (GitHub Org)</a></li>
+              <li><a href="https://github.com/ZQM-Computing/volusia-portal" className="hover:text-white no-underline text-gray-300">GitHub Source</a></li>
+              <li><Link to="/leaders" className="hover:text-white no-underline text-gray-300">Investor Data Room</Link></li>
+            </ul>
+          </div>
+        </div>
+        <div className="border-t border-gray-700 mt-8 pt-8 text-center text-sm text-gray-400">
+          &copy; 2026 ZQM Labs / ZQM Computing. Released under MIT License. Source available on GitHub.
+        </div>
+      </div>
+    </footer>
+  )
+}

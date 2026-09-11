@@ -1,0 +1,422 @@
+import { useState } from 'react'
+import { useEconomicIndicators, useDemographicIndicators, useClimateIndicators, useMapLayers, useDatasets } from '../hooks/useApi'
+import { Card, SectionTitle, Badge, DataSource, StatCard } from '../components/UI'
+import { ResponsiveLine } from '@nivo/line'
+import { ResponsiveBar } from '@nivo/bar'
+
+export function HomePage() {
+  const [visitedHero, setVisitedHero] = useState(false)
+
+  const { data: economic, loading: econLoading } = useEconomicIndicators()
+  const { data: demographics, loading: demoLoading } = useDemographicIndicators()
+  const climate = useClimateIndicators()
+  const climateIndicators = climate.data?.indicators ?? climate.data ?? null
+  const { data: mapLayers } = useMapLayers()
+  const { data: datasets } = useDatasets()
+
+  const loading = econLoading || demoLoading || climate.loading
+
+  const getIndicator = (items: any[] | null, name: string) => {
+    if (!items) return null
+    return items.find((i: any) => i.name === name)
+  }
+
+  const medianIncome = getIndicator(economic?.indicators, 'median_household_income_acs')
+  const unemploymentACS = getIndicator(economic?.indicators, 'unemployment_rate_acs')
+  const unemploymentBls = getIndicator(economic?.indicators, 'unemployment_rate_bls')
+  const population = getIndicator(demographics?.indicators, 'total_population_acs')
+  const personalIncome = getIndicator(economic?.indicators, 'personal_income_total')
+  const employment = getIndicator(economic?.indicators, 'employment_qcew')
+  const avgWage = getIndicator(economic?.indicators, 'avg_weekly_wage_qcew')
+  const temp = getIndicator(climateIndicators, 'avg_max_temp')
+  const totalPrecip = getIndicator(climateIndicators, 'total_precip')
+
+  const fmtNum = (v: any) => {
+    if (v == null) return '—'
+    const n = Number(v)
+    return isNaN(n) ? String(v) : n.toLocaleString()
+  }
+
+  const handleVisit = (page: string) => {
+    if (!visitedHero) {
+      setVisitedHero(true)
+    }
+  }
+
+  // Income trend chart data from live economic indicators
+  const incomeTrendData = economic?.indicators
+    ?.filter((i: any) => i.name?.includes('median_household_income') || i.name?.includes('personal_income_total'))
+    .map((i: any) => ({ x: '2024', y: Number(i.value) ?? 0 })) ?? []
+
+  const employmentTrendData = economic?.indicators
+    ?.filter((i: any) => i.name?.includes('employment') || i.name?.includes('unemployment'))
+    .map((i: any) => ({ x: '2024', y: Number(i.value) ?? 0 })) ?? []
+
+  return (
+    <div>
+      {/* Hero */}
+      <section className="bg-gradient-to-br from-volusia-navy via-volusia-blue to-volusia-teal text-white py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-3xl">
+            <Badge variant="warning">🏆 Gamification Hub</Badge>
+            <h1 className="text-4xl md:text-5xl font-bold mt-4 mb-6 font-display leading-tight">
+              Computing for a Connected Future
+            </h1>
+            <p className="text-xl text-gray-100 mb-8 leading-relaxed">
+              ZQM builds sustainable open-source technologies that connect families,
+              grow businesses, and empower communities to explore their full potential.
+              All open-source, all free, no paywalls.
+            </p>
+            <div className="flex flex-wrap gap-4">
+              <a href="/gamification" onClick={() => handleVisit('/gamification')} className="btn-primary no-underline bg-volusia-gold text-volusia-navy hover:bg-yellow-400">
+                🏆 Gamify Now
+              </a>
+              <a href="/data" onClick={() => handleVisit('/data')} className="btn-secondary no-underline border-white text-white hover:bg-white hover:text-volusia-navy">
+                Explore Data →
+              </a>
+              <a href="https://volusia.zqmlabs.com" onClick={() => handleVisit('https://volusia.zqmlabs.com')} className="btn-secondary no-underline border-white text-white hover:bg-white hover:text-volusia-navy">
+                Project Volusia →
+              </a>
+            </div>
+            {visitedHero && <Badge variant="success" className="mt-4">🎯 +3 XP earned!</Badge>}
+          </div>
+        </div>
+      </section>
+
+      {/* Featured Indicators */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {loading ? (
+            <>
+              {[1,2,3,4].map(i => <div key={i} className="stat-card animate-pulse bg-gray-100 h-24" />)}
+            </>
+          ) : (
+            <>
+              <StatCard
+                value={medianIncome ? `$${fmtNum(medianIncome.value)}` : '—'}
+                label="Median Household Income"
+                change={unemploymentBls ? parseFloat(unemploymentBls.value) : undefined}
+                changeLabel={unemploymentBls ? `Unemployment ${unemploymentBls.value}%` : undefined}
+              />
+              <StatCard
+                value={population ? fmtNum(population.value) : '—'}
+                label="Population (2024)"
+                change={undefined}
+                changeLabel="Census ACS DP05"
+              />
+              <StatCard
+                value={employment ? fmtNum(employment.value) : '—'}
+                label="Total Employment"
+                change={avgWage && !isNaN(Number(avgWage.value)) ? Number(avgWage.value) : undefined}
+                changeLabel={avgWage ? `Avg wkly $${avgWage.value}` : undefined}
+              />
+              <StatCard
+                value={personalIncome ? `$${fmtNum(Number(personalIncome.value) / 1000)}B` : '—'}
+                label="Personal Income"
+                change={temp && !isNaN(Number(temp.value)) ? Number(temp.value) : undefined}
+                changeLabel={temp ? `Avg max temp ${temp.value}°C` : undefined}
+              />
+            </>
+          )}
+        </div>
+      </section>
+
+      {/* Charts */}
+      {!loading && economic?.indicators && (
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <Card>
+              <h3 className="font-bold text-volusia-navy mb-4">Income Trend</h3>
+              {incomeTrendData.length > 0 ? (
+                <ResponsiveLine
+                  data={[{ id: 'Income', data: incomeTrendData }]}
+                  margin={{ top: 10, right: 30, bottom: 40, left: 60 }}
+                  xScale={{ type: 'point' }}
+                  yScale={{ type: 'linear' }}
+                  axisTop={null}
+                  axisRight={null}
+                  theme={{}}
+                  lineWidth={3}
+                />
+              ) : (
+                <div className="h-48 flex items-center justify-center text-sm text-gray-500">No trend data available</div>
+              )}
+            </Card>
+            <Card>
+              <h3 className="font-bold text-volusia-navy mb-4">Employment & Unemployment</h3>
+              {employmentTrendData.length > 0 ? (
+                <ResponsiveBar
+                  data={employmentTrendData.map((d: any) => ({ x: d.x, y: d.y }))}
+                  margin={{ top: 10, right: 30, bottom: 40, left: 60 }}
+                />
+              ) : (
+                <div className="h-48 flex items-center justify-center text-sm text-gray-500">No trend data available</div>
+              )}
+            </Card>
+          </div>
+        </section>
+      )}
+
+      {/* Climate Summary */}
+      {climateIndicators && (
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+            <Card>
+              <h3 className="text-sm font-semibold text-volusia-navy mb-2">Avg Max Temp</h3>
+              <div className="text-2xl font-bold text-volusia-teal">{temp ? `${temp.value}°C` : '—'}</div>
+              <DataSource source="NOAA NCEI" url="https://www.ncei.noaa.gov/" vintage="2025" />
+            </Card>
+            <Card>
+              <h3 className="text-sm font-semibold text-volusia-navy mb-2">Total Precipitation</h3>
+              <div className="text-2xl font-bold text-volusia-teal">{totalPrecip ? `${totalPrecip.value} mm` : '—'}</div>
+              <DataSource source="NOAA NCEI" url="https://www.ncei.noaa.gov/" vintage="2025" />
+            </Card>
+            <Card>
+              <h3 className="text-sm font-semibold text-volusia-navy mb-2">Avg Min Temp</h3>
+              <div className="text-2xl font-bold text-volusia-teal">
+                {getIndicator(climateIndicators, 'avg_min_temp') ? `${getIndicator(climateIndicators, 'avg_min_temp')?.value}°C` : '—'}
+              </div>
+              <DataSource source="NOAA NCEI" url="https://www.ncei.noaa.gov/" vintage="2025" />
+            </Card>
+          </div>
+        </section>
+      )}
+
+      {/* Map Preview */}
+      {mapLayers && mapLayers.length > 0 && (
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <SectionTitle title="Live Map Coverage" subtitle={`${mapLayers.length} layers across Volusia County`} />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card hover className="cursor-pointer">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-volusia-teal/20 flex items-center justify-center text-volusia-teal">🗺️</div>
+                <div>
+                  <div className="font-bold text-volusia-navy">County Boundary</div>
+                  <div className="text-xs text-volusia-slate">MultiPolygon — Full coverage</div>
+                </div>
+              </div>
+            </Card>
+            <Card hover className="cursor-pointer">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-volusia-blue/20 flex items-center justify-center text-volusia-blue">🏖️</div>
+                <div>
+                  <div className="font-bold text-volusia-navy">Beach Access Points</div>
+                  <div className="text-xs text-volusia-slate">{mapLayers.filter((l: any) => l.category === 'cultural').length} features</div>
+                </div>
+              </div>
+            </Card>
+            <Card hover className="cursor-pointer">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-volusia-purple/20 flex items-center justify-center text-volusia-purple">🌊</div>
+                <div>
+                  <div className="font-bold text-volusia-navy">Water Bodies</div>
+                  <div className="text-xs text-volusia-slate">{mapLayers.filter((l: any) => l.category === 'environment').length} features</div>
+                </div>
+              </div>
+            </Card>
+          </div>
+        </section>
+      )}
+
+      {/* Mission */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          <div>
+            <h2 className="text-3xl font-bold text-volusia-navy mb-4 font-display">
+              Connecting Families, Growing Business, Exploring Communities
+            </h2>
+            <p className="text-volusia-slate leading-relaxed mb-4">
+              ZQM is a computing company building sustainable open-source technologies
+              that connect families, grow businesses, and encourage exploration of our communities.
+            </p>
+            <p className="text-volusia-slate leading-relaxed mb-6">
+              Our mission is simple: build tools everyone can use, adapt, and improve.
+              Whether you're a family seeking connection, a business seeking growth,
+              or a community seeking to understand itself — ZQM has your back.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Badge>Open Source</Badge>
+              <Badge>Sustainable</Badge>
+              <Badge>Free</Badge>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <Card>
+              <h3 className="font-bold text-volusia-navy mb-2">🔗 Families</h3>
+              <p className="text-sm text-volusia-slate">Open tools that bring families closer together.</p>
+            </Card>
+            <Card>
+              <h3 className="font-bold text-volusia-navy mb-2">📈 Business</h3>
+              <p className="text-sm text-volusia-slate">Technology systems that scale with your ambition.</p>
+            </Card>
+            <Card>
+              <h3 className="font-bold text-volusia-navy mb-2">🌍 Communities</h3>
+              <p className="text-sm text-volusia-slate">Open data and analytics for community exploration.</p>
+            </Card>
+            <Card>
+              <h3 className="font-bold text-volusia-navy mb-2">🤖 AI</h3>
+              <p className="text-sm text-volusia-slate">Accessible AI research and local inference.</p>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Data Sources */}
+      <section className="bg-gray-100 py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <SectionTitle title="Data Sources" />
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-8">
+            <Card>
+              <h3 className="font-bold text-volusia-navy mb-2">US Census Bureau</h3>
+              <p className="text-sm text-volusia-slate">ACS 5-Year DP03/DP05 profiles and Population Estimates Program.</p>
+            </Card>
+            <Card>
+              <h3 className="font-bold text-volusia-navy mb-2">Bureau of Labor Statistics</h3>
+              <p className="text-sm text-volusia-slate">Local Area Unemployment Statistics and Quarterly Census of Employment.</p>
+            </Card>
+            <Card>
+              <h3 className="font-bold text-volusia-navy mb-2">Bureau of Economic Analysis</h3>
+              <p className="text-sm text-volusia-slate">CAINC1 regional personal income and employment data.</p>
+            </Card>
+            <Card>
+              <h3 className="font-bold text-volusia-navy mb-2">NOAA NCEI</h3>
+              <p className="text-sm text-volusia-slate">Climate normals — temperature, precipitation, and extreme weather.</p>
+            </Card>
+          </div>
+          <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card>
+              <h3 className="font-bold text-volusia-navy mb-2">C2ER / LCRC</h3>
+              <p className="text-sm text-volusia-slate">Cost of Living Index and regional economic comparisons for Volusia County.</p>
+            </Card>
+            <Card>
+              <h3 className="font-bold text-volusia-navy mb-2">Volusia CVB</h3>
+              <p className="text-sm text-volusia-slate">Hotel occupancy, ADR, and RevPar from Daytona Beach Tourism Data.</p>
+            </Card>
+          </div>
+          <div className="mt-8 flex flex-wrap gap-4">
+            <Badge variant="info">📊 {datasets?.length ?? 0} Datasets Available</Badge>
+            <Badge variant="success">✅ Live Indicators</Badge>
+            <Badge variant="warning">🔄 Hourly Auto-Refresh</Badge>
+          </div>
+        </div>
+      </section>
+
+      {/* Human README */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="bg-white rounded-xl border border-gray-200 p-8">
+          <h2 className="text-3xl font-bold text-volusia-navy mb-4 font-display">📖 About ZQM</h2>
+          <p className="text-volusia-slate leading-relaxed mb-6">
+            Welcome to ZQM — Computing for a Connected Future.
+            We build sustainable open-source technologies that connect families,
+            grow businesses, and empower communities to explore their full potential.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div className="p-4 bg-gray-100 rounded-lg">
+              <h3 className="font-bold text-volusia-navy mb-2">Our Mission</h3>
+              <p className="text-sm text-volusia-slate">Build sustainable open-source technologies that connect families, grow businesses, and encourage exploration of communities.</p>
+            </div>
+            <div className="p-4 bg-gray-100 rounded-lg">
+              <h3 className="font-bold text-volusia-navy mb-2">Our Work</h3>
+              <p className="text-sm text-volusia-slate">Open-source infrastructure, community data tools, AI research, and gamification platforms.</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div className="p-4 bg-gray-100 rounded-lg">
+              <h3 className="font-bold text-volusia-navy mb-2">Get Started</h3>
+              <p className="text-sm text-volusia-slate">1. Explore <a href="/data/" className="text-volusia-teal underline">Data</a> for community indicators</p>
+              <p className="text-sm text-volusia-slate">2. Visit <a href="/gamification/" className="text-volusia-teal underline">Gamification</a> to earn rewards</p>
+              <p className="text-sm text-volusia-slate">3. Read <a href="https://volusia.zqmlabs.com" className="text-volusia-teal underline">Project Volusia</a> for county-specific data</p>
+              <p className="text-sm text-volusia-slate">4. Explore <a href="/projects" className="text-volusia-teal underline">Our Projects</a> to see what we're building</p>
+            </div>
+            <div className="p-4 bg-gray-100 rounded-lg">
+              <h3 className="font-bold text-volusia-navy mb-2">Values</h3>
+              <p className="text-sm text-volusia-slate">✅ Open Source (MIT License)</p>
+              <p className="text-sm text-volusia-slate">✅ Free & Accessible</p>
+              <p className="text-sm text-volusia-slate">✅ Sustainable Technology</p>
+              <p className="text-sm text-volusia-slate">✅ Community Driven</p>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Badge variant="info">MIT License</Badge>
+            <Badge variant="success">Free & Open</Badge>
+            <Badge variant="warning">No Paywall</Badge>
+            <Badge variant="default">Community Driven</Badge>
+          </div>
+        </div>
+      </section>
+
+      {/* AI Agent README */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="bg-volusia-navy text-white rounded-xl p-8">
+          <h2 className="text-3xl font-bold mb-4 font-display">🤖 AI Agent README</h2>
+          <p className="text-gray-400 leading-relaxed mb-6">
+            This portal provides structured, machine-readable data for AI agents and automated systems.
+            All endpoints return JSON. All indicators are normalized with consistent naming.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="p-4 bg-volusia-navy rounded-lg">
+              <h3 className="font-bold text-volusia-gold mb-2">API Endpoints</h3>
+              <code className="text-xs text-gray-400 block mb-1">GET /api/indicators — All indicators</code>
+              <code className="text-xs text-gray-400 block mb-1">GET /api/indicators?category=Economic</code>
+              <code className="text-xs text-gray-400 block mb-1">GET /api/indicators/</code>
+              <code className="text-xs text-gray-400 block mb-1">GET /api/datasets — Dataset catalog</code>
+              <code className="text-xs text-gray-400 block mb-1">GET /api/map-layers — GeoJSON layers</code>
+              <code className="text-xs text-gray-400 block mb-1">GET /api/indicators.csv — Download CSV</code>
+            </div>
+            <div className="p-4 bg-volusia-navy rounded-lg">
+            </div>
+          </div>
+          <div className="mt-6 p-4 bg-volusia-navy rounded-lg">
+            <h3 className="font-bold text-volusia-gold mb-2">Data Schema</h3>
+            <code className="text-xs text-gray-400 block">indicators: [&#123;name, value, unit, category, source, source_url, vintage, description&#125;]</code>
+            <code className="text-xs text-gray-400 block">map_layers: [&#123;id, name, category, description, source, format, url, geometry&#125;]</code>
+            <code className="text-xs text-gray-400 block">datasets: [&#123;id, source, content, fetched_at&#125;]</code>
+          </div>
+        </div>
+      </section>
+
+    
+
+    
+
+    {/* Metadata Footer */}
+    <footer className="bg-gray-100 py-8 mt-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h3 className="text-lg font-bold text-volusia-navy mb-4">Data Sources & Metadata</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
+          <div>
+            <h4 className="font-semibold text-volusia-navy mb-2">Economic Indicators</h4>
+            {(economic?.indicators || []).slice(0, 3).map((i: any) => (
+              <div key={i.name} className="text-volusia-slate mb-1">
+                <span className="font-medium">{i.name}:</span> {i.value} {i.unit}
+                <br/><span className="text-xs text-gray-500">Source: {i.source} | Vintage: {i.vintage} | Fetched: {new Date(i.fetched_at).toLocaleString()}</span>
+              </div>
+            ))}
+          </div>
+          <div>
+            <h4 className="font-semibold text-volusia-navy mb-2">Demographics</h4>
+            {(economic?.indicators || []).slice(3, 6).map((i: any) => (
+              <div key={i.name} className="text-volusia-slate mb-1">
+                <span className="font-medium">{i.name}:</span> {i.value} {i.unit}
+                <br/><span className="text-xs text-gray-500">Source: {i.source} | Vintage: {i.vintage}</span>
+              </div>
+            ))}
+          </div>
+          <div>
+            <h4 className="font-semibold text-volusia-navy mb-2">Climate</h4>
+            {(economic?.indicators || []).slice(6, 9).map((i: any) => (
+              <div key={i.name} className="text-volusia-slate mb-1">
+                <span className="font-medium">{i.name}:</span> {i.value} {i.unit}
+                <br/><span className="text-xs text-gray-500">Source: {i.source} | Vintage: {i.vintage}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="mt-6 pt-4 border-t border-gray-300 text-xs text-gray-500">
+          <p>ZQM — Computing for a Connected Future. Open-source, sustainable, free.</p>
+        </div>
+      </div>
+    </footer>
+    </div>
+  )
+}

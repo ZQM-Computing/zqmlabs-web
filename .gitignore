@@ -1,0 +1,46 @@
+# Logs
+backend.log
+backend/*.log
+
+# Cache
+backend/data/cache/
+
+# Scripts (optional — keep or remove)
+.probe.ps1
+add-endpoints.py
+backend/start-server.bat
+fix-volusia-web.ps1
+
+# Debug notes
+debug-finding.md
+diagnosis-data-302.md
+ux-audit-findings.md
+ux-audit-plan.md
+
+# Build output
+dist/
+node_modules/
+__pycache__/
+*.pyc
+
+# Windows reserved filenames
+nullogs/
+nul
+
+# Environment
+.env
+.env.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Volusia DB — tracked (contains authoritative indicator data)
+# Uncomment the next line to exclude the DB from git tracking:
+# volusia.db
